@@ -24,42 +24,38 @@ typedef set<string> attendance;
 ssids_type ssids;
 attendance atten;
 string interface;
-string address; //mac address
-//curr_time setting
-time_t curr_time;
-struct tm *curr_tm;
 struct student
 {
     string name;
     address_type mac;
     string DB_mac;
-    string check;
+    string check ="x";
 
 };
 struct _time
 {
-
-    string year = std::to_string(curr_tm->tm_year + 1900);
-    string month = std::to_string(curr_tm->tm_mon +1);
-    string day = std::to_string(curr_tm->tm_mday);
-    string hour = std::to_string(curr_tm->tm_hour);
-    string minute = std::to_string(curr_tm->tm_min);
+    string year;
+    string month;
+    string day;
+    string hour;
+    string minute;
 };
+time_t curr_time;
+struct tm *curr_tm;
+_time t;
 int size = 3;
 student stu[500];
 class DB
 {
 public :
-    _time t;
-    void insertdata(int i, int select);
-    void print(int i);
+
+    void insertdata(int select);
+    void load(int select);
 };
-void DB::insertdata(int i,int select)
+void DB::insertdata(int select)
 {
+    int i=0;
     MYSQL mysql;
-    std::string query0 = "SELECT * FROM information WHERE mac_address = '"+stu[i].DB_mac+"'";
-    std::string query1 = "INSERT INTO information(name,mac_address) VALUES ('"+stu[i].name+"','"+stu[i].DB_mac+"')";
-    std::string query2 = "INSERT INTO timelog(year,month,day,hour,minute,name,mac,attendance) VALUES ('"+t.year+"',"+t.month+"','"+t.day+"','"+t.hour+"',"+t.minute+"','"+stu[i].name+"','"+address+"','"+stu[i].check+"')";
     mysql_init(&mysql);
     if(!mysql_real_connect(&mysql, NULL, "root","123","student_data",3306, (char *)NULL, 0))
     {
@@ -67,42 +63,43 @@ void DB::insertdata(int i,int select)
         exit(1) ;
     }
     printf("connect.....\n") ;
-
     if(mysql_query(&mysql, "USE student_data") )
     {
         printf("%s＼n", mysql_error(&mysql));
-        exit(1) ;
-
+        exit(1);
     }
-    switch(select)
+    for(i = 0 ; i <size ; i++)
     {
-    case 1 :
-        //if(!mysql_query(&mysql,query0.c_str()))
-        //{
+        std::string query = "INSERT INTO timelog(year,mon,day,hour,minute,name,mac_addr,attendance) VALUES ('"+t.year+"','"+t.month+"','"+t.day+"','"+t.hour+"','"+t.minute+"','"+stu[i].name+"','"+stu[i].DB_mac+"','"+stu[i].check+"')";
+        std::string query1 = "INSERT INTO information(name,mac_address) VALUES ('"+stu[i].name+"','"+stu[i].DB_mac+"')";
+        if(select == 1)
+        {
             if(mysql_query(&mysql,query1.c_str()))
             {
                 printf("%s＼n", mysql_error(&mysql));
                 exit(1) ;
             }
 
-        //}
-        break;
-    case 2 :
-        if(mysql_query(&mysql,query2.c_str()))
-        {
-            printf("%s＼n", mysql_error(&mysql));
-            exit(1) ;
         }
-        break;
+        else if(select == 2)
+        {
+            if(mysql_query(&mysql,query.c_str()))
+            {
+                printf("%s＼n", mysql_error(&mysql));
+                exit(1) ;
+            }
+
+
+        }
     }
     mysql_close(&mysql) ;
 }
-void DB::print(int i)
+void DB::load(int select)
 {
     MYSQL mysql ;
     MYSQL_RES* res ;
-    std::string query0 = "SELECT * FROM information";
-    std::string query1 = "SELECT * FROM timelog";
+    std::string query = "SELECT * FROM timelog";
+    std::string query1 = "SELECT * FROM information";
     MYSQL_ROW row ;
     mysql_init(&mysql) ;
     int field;
@@ -111,46 +108,51 @@ void DB::print(int i)
         printf("%s＼n",mysql_error(&mysql));
         exit(1) ;
     }
-    printf("성공적으로 연결되었습니다.\n") ;
+    printf("connect...\n") ;
     if(mysql_query(&mysql, "USE student_data") )
     {
         printf("%s＼n", mysql_error(&mysql));
         exit(1) ;
 
     }
-    switch(i)
+    if(mysql_query(&mysql,query.c_str()))
     {
-    case 1 :
-        if(mysql_query(&mysql,query0.c_str()))
-        {
-            printf("%s＼n", mysql_error(&mysql));
-            exit(1) ;
+        printf("%s＼n", mysql_error(&mysql));
+        exit(1) ;
 
-        }
-        break;
-    case 2 :
-        if(mysql_query(&mysql,query1.c_str()))
-        {
-            printf("%s＼n", mysql_error(&mysql));
-            exit(1) ;
-        }
-        break;
     }
-
     res = mysql_store_result( &mysql );
     field = mysql_num_fields(res);
 
     while( ( row = mysql_fetch_row( res ) ))
     {
         for(int cnt = 0 ; cnt < field ; ++cnt)
-            printf("%12s",row[cnt]);
+            printf("%5s",row[cnt]);
         printf("\n");
     }
 
+    if(select == 0)
+    {
+        if(mysql_query(&mysql,query.c_str()))
+        {
+            printf("%s＼n", mysql_error(&mysql));
+            exit(1) ;
+
+        }
+        res = mysql_store_result( &mysql );
+        field = mysql_num_fields(res);
+
+        while( ( row = mysql_fetch_row( res ) ))
+        {
+            for(int cnt = 0 ; cnt < field ; ++cnt)
+                printf("%5s",row[0]);
+            printf("\n");
+        }
+
+    }
     mysql_free_result( res ) ;
     mysql_close(&mysql) ;
 }
-
 class clear_section
 {
 public :
@@ -158,27 +160,6 @@ public :
     void time_setting();
     void log_section();
 };
-
-
-
-void clear_section::log_section()
-{
-    DB data;
-    time_setting();
-    if(curr_tm->tm_min / 5 == 0 && curr_tm->tm_sec == 0)
-    {
-
-        for(int i = 0 ; i < size ; i++)
-            data.insertdata(i,2); // information save to database
-        atten.clear();//use thread
-    }
-}
-void clear_section::time_setting()
-{
-    curr_time = time(NULL);
-    curr_tm = localtime(&curr_time);
-}
-
 class stu_info
 {
 public :
@@ -195,12 +176,11 @@ bool stu_info::save_info()
     cin>>size;
     for(i = 0 ; i < size ; i++)
     {
-        cout<<"input student name :";
+        cout<<i+1<<"input student name :";
         cin>>stu[i].name;
-        cout<<"input student mac address :";
-        cin>>address;
-        stu[i].DB_mac = address;
-        stu[i].mac = HW(address);
+        cout<<i+1<<"input student mac address :";
+        cin>>stu[i].DB_mac;
+        stu[i].mac = HW(stu[i].DB_mac);
         ssids_type::iterator it = ssids.find(stu[i].mac);
         if(it == ssids.end()){
             try{
@@ -214,12 +194,9 @@ bool stu_info::save_info()
     }
     return true;
 }
-
 void stu_info::time_log()
 {
     int i,count = 0;
-    clear_section time;
-    time.time_setting();
     cout << curr_tm->tm_year + 1900 << " year " << curr_tm->tm_mon + 1 << " month " << curr_tm->tm_mday << " day ";
     cout << curr_tm->tm_hour << " hour " << curr_tm->tm_min << " min "<< endl;
     for(i = 0 ; i < size ; i++)
@@ -229,11 +206,11 @@ void stu_info::time_log()
             attendance::iterator it = atten.find(stu[i].name);
             if(it != atten.end())
             {
-                cout<<"name :"<<stu[i].name<<"   mac :"<<stu[i].mac<<"   attendance"<<endl;
+                cout<<"name :"<<stu[i].name<<"   mac : "<<stu[i].mac<<"   attendance"<<endl;
                 count++;
             }
             else if(it == atten.end())
-                cout<<"name :"<<stu[i].name<<"   mac :"<<"  no attendance"<<endl;
+                cout<<"name :"<<stu[i].name<<"   mac : "<<"  no attendance"<<endl;
         }
         catch(runtime_error&)
         {
@@ -242,8 +219,6 @@ void stu_info::time_log()
     }
     cout<<"courrent_student : "<<count<<endl;
 }
-
-
 //probe request packet capturing
 class probeSniffer {
 public:
@@ -269,7 +244,10 @@ bool probeSniffer::call(PDU& pdu) {
             for(i = 0; i<size ; i++)
             {
                 if(addr == stu[i].mac)
+                {
                     atten.insert(stu[i].name);
+                    stu[i].check = "0";
+                }
             }
 
         }
