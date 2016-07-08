@@ -46,18 +46,25 @@ struct tm *curr_tm;
 _time t;
 int size;
 student stu[500];
+//DB ID: root passwd : 123
+
 class DB
 {
 public :
     void insertdata(int select);
     void load(int select);
+private :
+    const char *ID = "root";
+    const char *passwd = "123";
+
+
 };
 void DB::insertdata(int select)
 {
     int i=0;
     MYSQL mysql;
     mysql_init(&mysql);
-    if(!mysql_real_connect(&mysql, NULL, "root","123","student_data",3306, (char *)NULL, 0))
+    if(!mysql_real_connect(&mysql, NULL,ID,passwd,"student_data",3306, (char *)NULL, 0))
     {
         printf("%s＼n",mysql_error(&mysql));
         exit(1) ;
@@ -103,7 +110,7 @@ void DB::load(int select = 0)
     MYSQL_ROW row ;
     mysql_init(&mysql) ;
     int field;
-    if(!mysql_real_connect(&mysql, NULL, "root","123","student_data",3306, (char *)NULL, 0))
+    if(!mysql_real_connect(&mysql, NULL,ID,passwd,"student_data",3306, (char *)NULL, 0))
     {
         printf("%s＼n",mysql_error(&mysql));
         exit(1) ;

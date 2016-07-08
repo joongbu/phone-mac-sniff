@@ -56,7 +56,6 @@ int main(int argc, char* argv[]) {
         cout<<"3. print DB log"<<endl;
         cout<<"4. exit"<<endl;
         cin>>select;
-
         switch(select)
         {
         case 1 :
