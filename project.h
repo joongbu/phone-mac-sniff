@@ -18,17 +18,18 @@ using std::string;
 using std::runtime_error;
 using namespace std;
 using namespace Tins;
-typedef Dot11::address_type address_type; //mac address
-typedef set<address_type> ssids_type; //ssid
-typedef set<string> attendance;
-ssids_type ssids;
-attendance atten;
+typedef HWAddress<6> HW;
+typedef Dot11::address_type address_type;
+typedef set<address_type> ssids_type;//mac address
+typedef set<string> attendance;//name
+ssids_type ssids;//set <> mac address
+attendance atten;//set <> name
 string interface;
 struct student
 {
     string name;
-    address_type mac;
     string DB_mac;
+    address_type mac;
     string check ="x";
 
 };
@@ -43,12 +44,11 @@ struct _time
 time_t curr_time;
 struct tm *curr_tm;
 _time t;
-int size = 3;
+int size;
 student stu[500];
 class DB
 {
 public :
-
     void insertdata(int select);
     void load(int select);
 };
@@ -70,8 +70,8 @@ void DB::insertdata(int select)
     }
     for(i = 0 ; i <size ; i++)
     {
-        std::string query = "INSERT INTO timelog(year,mon,day,hour,minute,name,mac_addr,attendance) VALUES ('"+t.year+"','"+t.month+"','"+t.day+"','"+t.hour+"','"+t.minute+"','"+stu[i].name+"','"+stu[i].DB_mac+"','"+stu[i].check+"')";
         std::string query1 = "INSERT INTO information(name,mac_address) VALUES ('"+stu[i].name+"','"+stu[i].DB_mac+"')";
+        std::string query2 = "INSERT INTO timelog(year,mon,day,hour,minute,name,mac_addr,attendance) VALUES ('"+t.year+"','"+t.month+"','"+t.day+"','"+t.hour+"','"+t.minute+"','"+stu[i].name+"','"+stu[i].DB_mac+"','"+stu[i].check+"')";
         if(select == 1)
         {
             if(mysql_query(&mysql,query1.c_str()))
@@ -83,7 +83,7 @@ void DB::insertdata(int select)
         }
         else if(select == 2)
         {
-            if(mysql_query(&mysql,query.c_str()))
+            if(mysql_query(&mysql,query2.c_str()))
             {
                 printf("%s＼n", mysql_error(&mysql));
                 exit(1) ;
@@ -94,7 +94,7 @@ void DB::insertdata(int select)
     }
     mysql_close(&mysql) ;
 }
-void DB::load(int select)
+void DB::load(int select = 0)
 {
     MYSQL mysql ;
     MYSQL_RES* res ;
@@ -115,23 +115,47 @@ void DB::load(int select)
         exit(1) ;
 
     }
-    if(mysql_query(&mysql,query.c_str()))
+
+    if(select == 1)
     {
-        printf("%s＼n", mysql_error(&mysql));
-        exit(1) ;
+        if(mysql_query(&mysql,query1.c_str()))
+        {
+            printf("%s＼n", mysql_error(&mysql));
+            exit(1) ;
 
+        }
+        res = mysql_store_result( &mysql );
+        field = mysql_num_fields(res);
+        int i = 0;
+        while( ( row = mysql_fetch_row( res ) ))
+        {
+            for(int cnt = 0 ; cnt < field ; ++cnt)
+            {
+
+                if(cnt == 0)
+                    stu[i].name = row[cnt];
+                else if (cnt == 1)
+                {
+                    stu[i].DB_mac = row[cnt];
+                    stu[i].mac = HW(stu[i].DB_mac);
+                    ssids_type::iterator it = ssids.find(stu[i].mac);
+                    if(it == ssids.end())
+                    {
+                        try
+                        {
+                            ssids.insert(stu[i].mac);
+                            cout<<"save"<<endl;
+                        }
+                        catch(runtime_error&) {
+                        }
+                    }
+                }
+            }
+            i++;
+        }
+        size = i;
     }
-    res = mysql_store_result( &mysql );
-    field = mysql_num_fields(res);
-
-    while( ( row = mysql_fetch_row( res ) ))
-    {
-        for(int cnt = 0 ; cnt < field ; ++cnt)
-            printf("%5s",row[cnt]);
-        printf("\n");
-    }
-
-    if(select == 0)
+    else if(select != 1)
     {
         if(mysql_query(&mysql,query.c_str()))
         {
@@ -145,7 +169,7 @@ void DB::load(int select)
         while( ( row = mysql_fetch_row( res ) ))
         {
             for(int cnt = 0 ; cnt < field ; ++cnt)
-                printf("%5s",row[0]);
+                printf("%5s",row[cnt]);
             printf("\n");
         }
 
@@ -164,23 +188,29 @@ class stu_info
 {
 public :
     friend class DB;
-    typedef HWAddress<6> HW;
-    bool save_info(); //in order saving
+    bool save_info();
     void time_log();
 private:
 };
 bool stu_info::save_info()
 {
     int i ;
-    cout<<"input number students :"<<endl;
+    cout<<"input number students(max = 500) :"<<endl;
     cin>>size;
+    if(cin.fail())
+    {
+        cout<<"wrong Number Retry!!"<<endl;
+        cin.clear();
+        cin.ignore();
+        return save_info();
+    }
     for(i = 0 ; i < size ; i++)
     {
         cout<<i+1<<"input student name :";
         cin>>stu[i].name;
         cout<<i+1<<"input student mac address :";
         cin>>stu[i].DB_mac;
-        stu[i].mac = HW(stu[i].DB_mac);
+        stu[i].mac= HW(stu[i].DB_mac);
         ssids_type::iterator it = ssids.find(stu[i].mac);
         if(it == ssids.end()){
             try{
@@ -214,7 +244,6 @@ void stu_info::time_log()
         }
         catch(runtime_error&)
         {
-            //No ssid, just ignore it.
         }
     }
     cout<<"courrent_student : "<<count<<endl;
@@ -249,13 +278,10 @@ bool probeSniffer::call(PDU& pdu) {
                     stu[i].check = "0";
                 }
             }
-
         }
         catch (runtime_error&) {
         }
-
     }
     return true;
 }
-
 #endif // PROJECT_H

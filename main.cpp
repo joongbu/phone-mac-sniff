@@ -1,5 +1,15 @@
+/* mac address information
+ *
+    "한승균" mac="90:00:db:bb:98:c5"
+    "백종열" mac="64:bc:0c:68:e5:71"
+    "이혜빈" mac="48:59:29:f4:a5:87"
+    "지우중" mac="c4:43:8f:d1:51:56"
+    "유치호"
+    "박윤식"
+*/
+//input mac address 00:00:00:00:00:00
 #include "project.h"
- DB data;
+DB data;
 void reset()
 {
     while(1)
@@ -27,46 +37,17 @@ int main(int argc, char* argv[]) {
     // search probe request
     interface = argv[1];
     stu_info student_information;
-    size = 3;
+    std::thread first(reset);
+    first.detach();
     std::thread([] {
         probeSniffer  probe;
         probe.running(interface);
     }).detach();
-    std::thread first(reset);
-    first.detach();
-/*
-    stu[0].name="한승균";
-    stu[0].DB_mac="90:00:db:bb:98:c5";
-    stu[0].mac ="90:00:db:bb:98:c5";
-    stu[1].name="백종열";
-    stu[1].DB_mac="64:bc:0c:68:e5:71";
-    stu[1].mac ="64:bc:0c:68:e5:71";
-    stu[2].name ="이혜빈";
-    stu[2].DB_mac= "48:59:29:f4:a5:87";
-    stu[2].mac = "48:59:29:f4:a5:87";
-    int i;
-    for(i=0;i<size;i++)
-    {
-        ssids_type::iterator it = ssids.find(stu[i].mac);
-        if(it == ssids.end()){
-            try{
-                ssids.insert(stu[i].mac);
-            }
-            catch(runtime_error&) {
-                // No ssid, just ignore it.
-            }
-        }
-    }
-    */
     int select;
-    cout<<"student data load?(yes : 0)";
+    cout<<"student data load?(yes : 1)";
     cin>>select;
-    if(select == 0)
-    {
+    if(select == 1)
         data.load(select);
-
-    }
-
     while(1)
     {
         printf("\e[1;1H\e[2J");
@@ -81,8 +62,7 @@ int main(int argc, char* argv[]) {
         case 1 :
             printf("\e[1;1H\e[2J");
             student_information.save_info();
-            for(int i = 0 ; i < size ; i ++)
-            //data.insertdata(1);
+            data.insertdata(1);
             cout<<"exit : 0"<<endl;
             cin>>select;
             break;
@@ -94,8 +74,8 @@ int main(int argc, char* argv[]) {
             break;
         case 3:
             printf("\e[1;1H\e[2J");
-            cout<<"year  mon  day  hour  min  name  addr  attendance"<<endl;
-            data.load(1);
+            cout<<"year   mon   day   hour  min name      addr      attendance"<<endl;
+            data.load();
             cout<<"exit : 0"<<endl;
             cin>>select;
             break;
