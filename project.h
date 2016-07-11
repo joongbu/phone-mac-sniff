@@ -56,8 +56,6 @@ public :
 private :
     const char *ID = "root";
     const char *passwd = "123";
-
-
 };
 void DB::insertdata(int select)
 {
@@ -75,6 +73,7 @@ void DB::insertdata(int select)
         printf("%s＼n", mysql_error(&mysql));
         exit(1);
     }
+
     for(i = 0 ; i <size ; i++)
     {
         std::string query1 = "INSERT INTO information(name,mac_address) VALUES ('"+stu[i].name+"','"+stu[i].DB_mac+"')";
@@ -90,6 +89,17 @@ void DB::insertdata(int select)
         }
         else if(select == 2)
         {
+            std::string query1 = "INSERT INTO information(name,mac_address) VALUES ('"+stu[size+1].name+"','"+stu[size+1].DB_mac+"')";
+            if(mysql_query(&mysql,query1.c_str()))
+            {
+                printf("%s＼n", mysql_error(&mysql));
+                exit(1) ;
+            }
+
+        }
+
+        else if(select == 3)
+        {
             if(mysql_query(&mysql,query2.c_str()))
             {
                 printf("%s＼n", mysql_error(&mysql));
@@ -98,12 +108,13 @@ void DB::insertdata(int select)
 
 
         }
+
     }
     mysql_close(&mysql) ;
 }
 void DB::load(int select = 0)
 {
-    MYSQL mysql ;
+    MYSQL mysql;
     MYSQL_RES* res ;
     std::string query = "SELECT * FROM timelog";
     std::string query1 = "SELECT * FROM information";
@@ -184,6 +195,7 @@ void DB::load(int select = 0)
     mysql_free_result( res ) ;
     mysql_close(&mysql) ;
 }
+DB data;
 class clear_section
 {
 public :
@@ -202,33 +214,63 @@ private:
 bool stu_info::save_info()
 {
     int i ;
-    cout<<"input number students(max = 500) :"<<endl;
-    cin>>size;
-    if(cin.fail())
+    if(size == 0)
     {
-        cout<<"wrong Number Retry!!"<<endl;
-        cin.clear();
-        cin.ignore();
-        return save_info();
-    }
-    for(i = 0 ; i < size ; i++)
-    {
-        cout<<i+1<<"input student name :";
-        cin>>stu[i].name;
-        cout<<i+1<<"input student mac address :";
-        cin>>stu[i].DB_mac;
-        stu[i].mac= HW(stu[i].DB_mac);
-        ssids_type::iterator it = ssids.find(stu[i].mac);
-        if(it == ssids.end()){
-            try{
-                ssids.insert(stu[i].mac);
-                cout<<"save"<<endl;
+            cout<<"input number students(max = 500) :";
+            cin>>size;
+            if(cin.fail())
+            {
+                cout<<"wrong Number Retry!!"<<endl;
+                cin.clear();
+                cin.ignore();
+                return save_info();
             }
-            catch(runtime_error&) {
-                return false;
+
+            for(i = 0 ; i < size ; i++)
+            {
+                cout<<i+1<<"input student name :";
+                cin>>stu[i].name;
+                cout<<i+1<<"input student mac address :";
+                cin>>stu[i].DB_mac;
+                stu[i].mac= HW(stu[i].DB_mac);
+                ssids_type::iterator it = ssids.find(stu[i].mac);
+                if(it == ssids.end()){
+                    try{
+                        ssids.insert(stu[i].mac);
+                        cout<<"save"<<endl;
+                    }
+                    catch(runtime_error&){
+                        return false;
+                    }
+                }
             }
+            data.insertdata(1);
+
         }
-    }
+
+        else if(size != 0)
+        {
+            cout<<"add student"<<endl;
+            cout<<"input student name :";
+            cin>>stu[size].name;
+            cout<<"input student mac address :";
+            cin>>stu[size].DB_mac;
+            size++;
+            stu[size].mac= HW(stu[size].DB_mac);
+            ssids_type::iterator it = ssids.find(stu[size].mac);
+            if(it == ssids.end()){
+                try{
+                    ssids.insert(stu[size].mac);
+                    cout<<"save"<<endl;
+                }
+                catch(runtime_error&) {
+                    return false;
+                }
+
+            }
+                data.insertdata(2);
+        }
+
     return true;
 }
 void stu_info::time_log()
@@ -290,5 +332,48 @@ bool probeSniffer::call(PDU& pdu) {
         }
     }
     return true;
+}
+//reset func
+int ts;
+void reset()
+{
+    while(1)
+    {
+        curr_time = time(NULL);
+        curr_tm = localtime(&curr_time);
+        if(ts == 5 && curr_tm->tm_min % 5 == 0 && curr_tm->tm_sec == 0)
+        {
+            t.year = std::to_string(curr_tm->tm_year + 1900);
+            t.month = std::to_string(curr_tm->tm_mon +1);
+            t.day = std::to_string(curr_tm->tm_mday);
+            t.hour = std::to_string(curr_tm->tm_hour);
+            t.minute = std::to_string(curr_tm->tm_min);
+            sleep(1);
+            data.insertdata(2);
+            atten.clear();
+        }
+        if(ts == 30 && curr_tm->tm_min % 30 == 0 && curr_tm->tm_sec == 0)
+        {
+            t.year = std::to_string(curr_tm->tm_year + 1900);
+            t.month = std::to_string(curr_tm->tm_mon +1);
+            t.day = std::to_string(curr_tm->tm_mday);
+            t.hour = std::to_string(curr_tm->tm_hour);
+            t.minute = std::to_string(curr_tm->tm_min);
+            sleep(1);
+            data.insertdata(2);
+            atten.clear();
+        }
+        if(ts == 60 && curr_tm->tm_min == 0 && curr_tm->tm_sec == 0)
+        {
+            t.year = std::to_string(curr_tm->tm_year + 1900);
+            t.month = std::to_string(curr_tm->tm_mon +1);
+            t.day = std::to_string(curr_tm->tm_mday);
+            t.hour = std::to_string(curr_tm->tm_hour);
+            t.minute = std::to_string(curr_tm->tm_min);
+            sleep(1);
+            data.insertdata(3);
+            atten.clear();
+        }
+    }
 }
 #endif // PROJECT_H

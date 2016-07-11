@@ -4,31 +4,11 @@
     "백종열" mac="64:bc:0c:68:e5:71"
     "이혜빈" mac="48:59:29:f4:a5:87"
     "지우중" mac="c4:43:8f:d1:51:56"
-    "유치호"
+    "유치호" mac="94:76:b7:b9:f7:19"
     "박윤식"
 */
 //input mac address 00:00:00:00:00:00
 #include "project.h"
-DB data;
-void reset()
-{
-    while(1)
-    {
-        curr_time = time(NULL);
-        curr_tm = localtime(&curr_time);
-        if(curr_tm->tm_min % 5 == 0 && curr_tm->tm_sec == 0)
-        {
-            t.year = std::to_string(curr_tm->tm_year + 1900);
-            t.month = std::to_string(curr_tm->tm_mon +1);
-            t.day = std::to_string(curr_tm->tm_mday);
-            t.hour = std::to_string(curr_tm->tm_hour);
-            t.minute = std::to_string(curr_tm->tm_min);
-            sleep(1);
-            data.insertdata(2);
-            atten.clear();
-        }
-    }
-}
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         cout << "Usage: " <<* argv << " <interface>" << endl;
@@ -37,8 +17,13 @@ int main(int argc, char* argv[]) {
     // search probe request
     interface = argv[1];
     stu_info student_information;
+    cout<<"setting time :(5, 30, 60)";
+    cin>>ts;
+    if(ts == 5 || ts == 30 || ts == 60)
+    {
     std::thread first(reset);
     first.detach();
+
     std::thread([] {
         probeSniffer  probe;
         probe.running(interface);
@@ -52,7 +37,7 @@ int main(int argc, char* argv[]) {
     {
         printf("\e[1;1H\e[2J");
         cout<<"1. let's save student impormation"<<endl;
-        cout<<"2. view student attendance log"<<endl; //stu[0].name != null db log thread
+        cout<<"2. view student attendance log"<<endl;
         cout<<"3. print DB log"<<endl;
         cout<<"4. exit"<<endl;
         cin>>select;
@@ -61,7 +46,6 @@ int main(int argc, char* argv[]) {
         case 1 :
             printf("\e[1;1H\e[2J");
             student_information.save_info();
-            data.insertdata(1);
             cout<<"exit : 0"<<endl;
             cin>>select;
             break;
@@ -73,7 +57,7 @@ int main(int argc, char* argv[]) {
             break;
         case 3:
             printf("\e[1;1H\e[2J");
-            cout<<"year   mon   day   hour  min name      addr      attendance"<<endl;
+            cout<<"year   mon   day  hour  min name      addr      attendance"<<endl;
             data.load();
             cout<<"exit : 0"<<endl;
             cin>>select;
@@ -84,6 +68,9 @@ int main(int argc, char* argv[]) {
         }
         if(select == 4) break;
     }
+    }
+    else
+        cout<<"fail timelog setting"<<endl;
 
 }
 
