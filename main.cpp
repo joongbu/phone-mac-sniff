@@ -5,13 +5,11 @@
     "이혜빈" mac="48:59:29:f4:a5:87"
     "지우중" mac="c4:43:8f:d1:51:56"
     "유치호" mac="94:76:b7:b9:f7:19"
-    "박윤식"
-    78:0c:b8:75:4c:9d
-    28:27:bf:ef:3f:6c
+    known mac : 78:0c:b8:75:4c:9d
+    known mac : 28:27:bf:ef:3f:6c
 //input mac address 00:00:00:00:00:00
 */
 #include "project.h"
-
 int ts;
 void reset() //thread
 {
@@ -28,9 +26,11 @@ void reset() //thread
             t.minute = std::to_string(curr_tm->tm_min);
             sleep(1);
             data.insertdata(3);
+            data.insertdata(4);
             mtx.lock();
             atten.clear();
             un.clear();
+            unsize=0;
             mtx.unlock();
         }
         if(ts == 30 && curr_tm->tm_min % 30 == 0 && curr_tm->tm_sec == 0)
@@ -42,8 +42,10 @@ void reset() //thread
             t.minute = std::to_string(curr_tm->tm_min);
             sleep(1);
             data.insertdata(3);
+            data.insertdata(4);
             mtx.lock();
             atten.clear();
+            unsize=0;
             un.clear();
             mtx.unlock();
         }
@@ -56,8 +58,10 @@ void reset() //thread
             t.minute = std::to_string(curr_tm->tm_min);
             sleep(1);
             data.insertdata(3);
+            data.insertdata(4);
             mtx.lock();
             atten.clear();
+            unsize=0;
             un.clear();
             mtx.unlock();
         }
@@ -125,7 +129,4 @@ int main(int argc, char* argv[]) {
     }
     else
         cout<<"fail timelog setting"<<endl;
-
 }
-
-

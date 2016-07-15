@@ -29,7 +29,10 @@ ssids_type ssids;//set <> mac address
 unkown_type un;
 attendance atten;//set <> name
 string interface;
-string unmac;
+struct unkown
+{
+    string mac;
+};
 struct student
 {
     string name;
@@ -49,11 +52,11 @@ struct _time
 time_t curr_time;
 struct tm *curr_tm;
 _time t;
-int size;
+int unsize = 0;//unkown mac address size
+int size = 0; // student size
 student stu[500];
+unkown unmac[500];
 std::mutex mtx;
-//DB ID: root passwd : 123
-
 class DB
 {
 public :
@@ -83,38 +86,39 @@ void DB::insertdata(int select)
     for(i = 0 ; i <size ; i++)
     {
         std::string query1 = "INSERT INTO information(name,mac_address) VALUES ('"+stu[i].name+"','"+stu[i].DB_mac+"')";
-        std::string query2 = "INSERT INTO timelog(year,mon,day,hour,minute,name,mac_addr,attendance) VALUES ('"+t.year+"','"+t.month+"','"+t.day+"','"+t.hour+"','"+t.minute+"','"+stu[i].name+"','"+stu[i].DB_mac+"','"+stu[i].check+"')";
-        std::string query3 = "INSERT INTO timelog(year,mon,day,hour,minute,name,mac_addr,attendance) VALUES ('"+t.year+"','"+t.month+"','"+t.day+"','"+t.hour+"','"+t.minute+"','unkown','"+unmac+"','')";
-        if(select == 1)
+        std::string query2 = "INSERT INTO information(name,mac_address) VALUES ('"+stu[size+1].name+"','"+stu[size+1].DB_mac+"')";
+        std::string query3 = "INSERT INTO timelog(year,mon,day,hour,minute,name,mac_addr,attendance) VALUES ('"+t.year+"','"+t.month+"','"+t.day+"','"+t.hour+"','"+t.minute+"','"+stu[i].name+"','"+stu[i].DB_mac+"','"+stu[i].check+"')";
+        switch(select)
         {
+        case 1:
             if(mysql_query(&mysql,query1.c_str()))
             {
                 printf("%s＼n", mysql_error(&mysql));
                 exit(1) ;
             }
-
-        }
-        else if(select == 2)
-        {
-            std::string query1 = "INSERT INTO information(name,mac_address) VALUES ('"+stu[size+1].name+"','"+stu[size+1].DB_mac+"')";
-            if(mysql_query(&mysql,query1.c_str()))
-            {
-                printf("%s＼n", mysql_error(&mysql));
-                exit(1) ;
-            }
-
-        }
-
-        else if(select == 3)
-        {
+            break;
+        case 2:
             if(mysql_query(&mysql,query2.c_str()))
             {
                 printf("%s＼n", mysql_error(&mysql));
                 exit(1) ;
             }
-            if(unmac != "0")
-            {
+            break;
+        case 3:
             if(mysql_query(&mysql,query3.c_str()))
+            {
+                printf("%s＼n", mysql_error(&mysql));
+                exit(1) ;
+            }
+            break;
+        }
+   }
+        if(select == 4)
+        {
+            for(int j = 0 ; j < unsize; j++)
+            {
+            std::string query4 = "INSERT INTO timelog(year,mon,day,hour,minute,name,mac_addr,attendance) VALUES ('"+t.year+"','"+t.month+"','"+t.day+"','"+t.hour+"','"+t.minute+"','unkown','"+unmac[j].mac+"','')";
+            if(mysql_query(&mysql,query4.c_str()))
             {
                 printf("%s＼n", mysql_error(&mysql));
                 exit(1) ;
@@ -123,7 +127,6 @@ void DB::insertdata(int select)
 
         }
 
-    }
     mysql_close(&mysql) ;
 }
 void DB::load(int select = 0)
@@ -231,60 +234,60 @@ bool stu_info::save_info()
     int i ;
     if(size == 0)
     {
-            cout<<"input number students(max = 500) :";
-            cin>>size;
-            if(cin.fail())
-            {
-                cout<<"wrong Number Retry!!"<<endl;
-                cin.clear();
-                cin.ignore();
-                return save_info();
-            }
-
-            for(i = 0 ; i < size ; i++)
-            {
-                cout<<i+1<<"input student name :";
-                cin>>stu[i].name;
-                cout<<i+1<<"input student mac address :";
-                cin>>stu[i].DB_mac;
-                stu[i].mac= HW(stu[i].DB_mac);
-                ssids_type::iterator it = ssids.find(stu[i].mac);
-                if(it == ssids.end()){
-                    try{
-                        ssids.insert(stu[i].mac);
-                        cout<<"save"<<endl;
-                    }
-                    catch(runtime_error&){
-                        return false;
-                    }
-                }
-            }
-            data.insertdata(1);
-
+        cout<<"input number students(max = 500) :";
+        cin>>size;
+        if(cin.fail())
+        {
+            cout<<"wrong Number Retry!!"<<endl;
+            cin.clear();
+            cin.ignore();
+            return save_info();
         }
 
-        else if(size != 0)
+        for(i = 0 ; i < size ; i++)
         {
-            cout<<"add student"<<endl;
-            cout<<"input student name :";
-            cin>>stu[size].name;
-            cout<<"input student mac address :";
-            cin>>stu[size].DB_mac;
-            size++;
-            stu[size].mac= HW(stu[size].DB_mac);
-            ssids_type::iterator it = ssids.find(stu[size].mac);
+            cout<<i+1<<"input student name :";
+            cin>>stu[i].name;
+            cout<<i+1<<"input student mac address :";
+            cin>>stu[i].DB_mac;
+            stu[i].mac= HW(stu[i].DB_mac);
+            ssids_type::iterator it = ssids.find(stu[i].mac);
             if(it == ssids.end()){
                 try{
-                    ssids.insert(stu[size].mac);
+                    ssids.insert(stu[i].mac);
                     cout<<"save"<<endl;
                 }
-                catch(runtime_error&) {
+                catch(runtime_error&){
                     return false;
                 }
-
             }
-                data.insertdata(2);
         }
+        data.insertdata(1);
+
+    }
+
+    else if(size != 0)
+    {
+        cout<<"add student"<<endl;
+        cout<<"input student name :";
+        cin>>stu[size].name;
+        cout<<"input student mac address :";
+        cin>>stu[size].DB_mac;
+        size++;
+        stu[size].mac= HW(stu[size].DB_mac);
+        ssids_type::iterator it = ssids.find(stu[size].mac);
+        if(it == ssids.end()){
+            try{
+                ssids.insert(stu[size].mac);
+                cout<<"save"<<endl;
+            }
+            catch(runtime_error&) {
+                return false;
+            }
+
+        }
+        data.insertdata(2);
+    }
 
     return true;
 }
@@ -303,7 +306,7 @@ void stu_info::time_log()
             mtx.unlock();
             if(it != atten.end())
             {
-                cout<<"name :"<<stu[i].name<<"   mac : "<<stu[i].mac<<"   attendance"<<endl;
+                cout<<"name :"<<stu[i].name<<"   mac : "<<stu[i].mac<<"   attendance : "<<endl;
                 count++;
             }
             else if(it == atten.end())
@@ -354,17 +357,22 @@ bool probeSniffer::call(PDU& pdu) {
         }
 
     }
-    unkown_type::iterator it1 = un.find(addr);
-    if(it == ssids.end() && it1 == un.end())
+
+    if(it == ssids.end())
     {
+        unkown_type::iterator it1 = un.find(addr);
+        if(it1 == un.end())
+        {
         try
         {
-                mtx.lock();
-                un.insert(addr);
-                unmac = addr.to_string();
-                mtx.unlock();           
+            mtx.lock();
+            un.insert(addr);
+            unmac[unsize].mac = addr.to_string();//string casting addr
+            unsize = un.size();
+            mtx.unlock();
         }
         catch (runtime_error&) {
+        }
         }
 
     }
