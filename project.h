@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <mysql/mysql.h>
 #include <errno.h>
+#include <mutex>
 using std::cin;
 using std::set;
 using std::cout;
@@ -21,10 +22,14 @@ using namespace Tins;
 typedef HWAddress<6> HW;
 typedef Dot11::address_type address_type;
 typedef set<address_type> ssids_type;//mac address
+typedef set<address_type> unkown_type;
 typedef set<string> attendance;//name
+std::string storage_to_string;
 ssids_type ssids;//set <> mac address
+unkown_type un;
 attendance atten;//set <> name
 string interface;
+string unmac;
 struct student
 {
     string name;
@@ -46,6 +51,7 @@ struct tm *curr_tm;
 _time t;
 int size;
 student stu[500];
+std::mutex mtx;
 //DB ID: root passwd : 123
 
 class DB
@@ -78,6 +84,7 @@ void DB::insertdata(int select)
     {
         std::string query1 = "INSERT INTO information(name,mac_address) VALUES ('"+stu[i].name+"','"+stu[i].DB_mac+"')";
         std::string query2 = "INSERT INTO timelog(year,mon,day,hour,minute,name,mac_addr,attendance) VALUES ('"+t.year+"','"+t.month+"','"+t.day+"','"+t.hour+"','"+t.minute+"','"+stu[i].name+"','"+stu[i].DB_mac+"','"+stu[i].check+"')";
+        std::string query3 = "INSERT INTO timelog(year,mon,day,hour,minute,name,mac_addr,attendance) VALUES ('"+t.year+"','"+t.month+"','"+t.day+"','"+t.hour+"','"+t.minute+"','unkown','"+unmac+"','')";
         if(select == 1)
         {
             if(mysql_query(&mysql,query1.c_str()))
@@ -105,7 +112,14 @@ void DB::insertdata(int select)
                 printf("%s＼n", mysql_error(&mysql));
                 exit(1) ;
             }
-
+            if(unmac != "0")
+            {
+            if(mysql_query(&mysql,query3.c_str()))
+            {
+                printf("%s＼n", mysql_error(&mysql));
+                exit(1) ;
+            }
+            }
 
         }
 
@@ -195,7 +209,7 @@ void DB::load(int select = 0)
     mysql_free_result( res ) ;
     mysql_close(&mysql) ;
 }
-DB data;
+
 class clear_section
 {
 public :
@@ -203,6 +217,7 @@ public :
     void time_setting();
     void log_section();
 };
+DB data;
 class stu_info
 {
 public :
@@ -278,11 +293,14 @@ void stu_info::time_log()
     int i,count = 0;
     cout << curr_tm->tm_year + 1900 << " year " << curr_tm->tm_mon + 1 << " month " << curr_tm->tm_mday << " day ";
     cout << curr_tm->tm_hour << " hour " << curr_tm->tm_min << " min "<< endl;
+
     for(i = 0 ; i < size ; i++)
     {
         try
         {
+            mtx.lock();
             attendance::iterator it = atten.find(stu[i].name);
+            mtx.unlock();
             if(it != atten.end())
             {
                 cout<<"name :"<<stu[i].name<<"   mac : "<<stu[i].mac<<"   attendance"<<endl;
@@ -301,7 +319,6 @@ void stu_info::time_log()
 class probeSniffer {
 public:
     void running(const string& iface);
-
 private:
     bool call(PDU& pdu);
 };
@@ -314,8 +331,10 @@ void probeSniffer::running(const std::string& iface) {
 }
 bool probeSniffer::call(PDU& pdu) {
     const Dot11ProbeRequest& probe = pdu.rfind_pdu<Dot11ProbeRequest>();
-    address_type addr = probe.addr2(); //802.11 header second mac address sniffing
+    address_type addr = probe.addr2();
+    string ssid = probe.ssid();
     ssids_type::iterator it = ssids.find(addr);
+
     int i;
     if (it != ssids.end()) {
         try {
@@ -323,57 +342,32 @@ bool probeSniffer::call(PDU& pdu) {
             {
                 if(addr == stu[i].mac)
                 {
+                    mtx.lock();
                     atten.insert(stu[i].name);
+                    mtx.unlock();
                     stu[i].check = "0";
                 }
+
             }
         }
         catch (runtime_error&) {
         }
+
+    }
+    unkown_type::iterator it1 = un.find(addr);
+    if(it == ssids.end() && it1 == un.end())
+    {
+        try
+        {
+                mtx.lock();
+                un.insert(addr);
+                unmac = addr.to_string();
+                mtx.unlock();           
+        }
+        catch (runtime_error&) {
+        }
+
     }
     return true;
-}
-//reset func
-int ts;
-void reset()
-{
-    while(1)
-    {
-        curr_time = time(NULL);
-        curr_tm = localtime(&curr_time);
-        if(ts == 5 && curr_tm->tm_min % 5 == 0 && curr_tm->tm_sec == 0)
-        {
-            t.year = std::to_string(curr_tm->tm_year + 1900);
-            t.month = std::to_string(curr_tm->tm_mon +1);
-            t.day = std::to_string(curr_tm->tm_mday);
-            t.hour = std::to_string(curr_tm->tm_hour);
-            t.minute = std::to_string(curr_tm->tm_min);
-            sleep(1);
-            data.insertdata(2);
-            atten.clear();
-        }
-        if(ts == 30 && curr_tm->tm_min % 30 == 0 && curr_tm->tm_sec == 0)
-        {
-            t.year = std::to_string(curr_tm->tm_year + 1900);
-            t.month = std::to_string(curr_tm->tm_mon +1);
-            t.day = std::to_string(curr_tm->tm_mday);
-            t.hour = std::to_string(curr_tm->tm_hour);
-            t.minute = std::to_string(curr_tm->tm_min);
-            sleep(1);
-            data.insertdata(2);
-            atten.clear();
-        }
-        if(ts == 60 && curr_tm->tm_min == 0 && curr_tm->tm_sec == 0)
-        {
-            t.year = std::to_string(curr_tm->tm_year + 1900);
-            t.month = std::to_string(curr_tm->tm_mon +1);
-            t.day = std::to_string(curr_tm->tm_mday);
-            t.hour = std::to_string(curr_tm->tm_hour);
-            t.minute = std::to_string(curr_tm->tm_min);
-            sleep(1);
-            data.insertdata(3);
-            atten.clear();
-        }
-    }
 }
 #endif // PROJECT_H

@@ -6,9 +6,63 @@
     "지우중" mac="c4:43:8f:d1:51:56"
     "유치호" mac="94:76:b7:b9:f7:19"
     "박윤식"
-*/
+    78:0c:b8:75:4c:9d
+    28:27:bf:ef:3f:6c
 //input mac address 00:00:00:00:00:00
+*/
 #include "project.h"
+
+int ts;
+void reset() //thread
+{
+    while(1)
+    {
+        curr_time = time(NULL);
+        curr_tm = localtime(&curr_time);
+        if(ts == 5 && curr_tm->tm_min % 5 == 0 && curr_tm->tm_sec == 0)
+        {
+            t.year = std::to_string(curr_tm->tm_year + 1900);
+            t.month = std::to_string(curr_tm->tm_mon +1);
+            t.day = std::to_string(curr_tm->tm_mday);
+            t.hour = std::to_string(curr_tm->tm_hour);
+            t.minute = std::to_string(curr_tm->tm_min);
+            sleep(1);
+            data.insertdata(3);
+            mtx.lock();
+            atten.clear();
+            un.clear();
+            mtx.unlock();
+        }
+        if(ts == 30 && curr_tm->tm_min % 30 == 0 && curr_tm->tm_sec == 0)
+        {
+            t.year = std::to_string(curr_tm->tm_year + 1900);
+            t.month = std::to_string(curr_tm->tm_mon +1);
+            t.day = std::to_string(curr_tm->tm_mday);
+            t.hour = std::to_string(curr_tm->tm_hour);
+            t.minute = std::to_string(curr_tm->tm_min);
+            sleep(1);
+            data.insertdata(3);
+            mtx.lock();
+            atten.clear();
+            un.clear();
+            mtx.unlock();
+        }
+        if(ts == 60 && curr_tm->tm_min == 0 && curr_tm->tm_sec == 0)
+        {
+            t.year = std::to_string(curr_tm->tm_year + 1900);
+            t.month = std::to_string(curr_tm->tm_mon +1);
+            t.day = std::to_string(curr_tm->tm_mday);
+            t.hour = std::to_string(curr_tm->tm_hour);
+            t.minute = std::to_string(curr_tm->tm_min);
+            sleep(1);
+            data.insertdata(3);
+            mtx.lock();
+            atten.clear();
+            un.clear();
+            mtx.unlock();
+        }
+    }
+}
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         cout << "Usage: " <<* argv << " <interface>" << endl;
