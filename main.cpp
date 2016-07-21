@@ -24,6 +24,8 @@ void reset() //thread
             t.day = std::to_string(curr_tm->tm_mday);
             t.hour = std::to_string(curr_tm->tm_hour);
             t.minute = std::to_string(curr_tm->tm_min);
+            date = t.year + "-" + t.month + "-" + t.day;
+            d_time = t.hour + ":" + t.minute;
             sleep(1);
             data.insertdata(3);
             data.insertdata(4);
@@ -40,6 +42,8 @@ void reset() //thread
             t.day = std::to_string(curr_tm->tm_mday);
             t.hour = std::to_string(curr_tm->tm_hour);
             t.minute = std::to_string(curr_tm->tm_min);
+            date = t.year + "-" + t.month + "-" + t.day;
+            d_time = t.hour + ":" + t.minute;
             sleep(1);
             data.insertdata(3);
             data.insertdata(4);
@@ -56,6 +60,8 @@ void reset() //thread
             t.day = std::to_string(curr_tm->tm_mday);
             t.hour = std::to_string(curr_tm->tm_hour);
             t.minute = std::to_string(curr_tm->tm_min);
+            date = t.year + "-" + t.month + "-" + t.day;
+            d_time = t.hour + ":" + t.minute;
             sleep(1);
             data.insertdata(3);
             data.insertdata(4);
@@ -115,7 +121,6 @@ int main(int argc, char* argv[]) {
             break;
         case 3:
             printf("\e[1;1H\e[2J");
-            cout<<"year   mon   day  hour  min name      addr      attendance"<<endl;
             data.load();
             cout<<"exit : 0"<<endl;
             cin>>select;
